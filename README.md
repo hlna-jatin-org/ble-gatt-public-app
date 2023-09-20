@@ -1,2 +1,2 @@
-# ble-gatt-public-app
-BLE gatt app to share the build
+# ble-gatt-app
+BLE 4.0 GATT application
