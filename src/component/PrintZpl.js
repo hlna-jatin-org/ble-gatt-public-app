@@ -21,6 +21,7 @@ const PrintZpl = ({ gattServer }) => {
             .catch(error => {
                 setErrorMessage('Failed to get services and characteristics: ' + error.message);
             });
+            
     }, [gattServer]);
 
     const printZpl = () => {

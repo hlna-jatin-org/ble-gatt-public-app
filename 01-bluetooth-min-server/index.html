@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zebra Printer Bluetooth PWA</title>
+</head>
+<body>
+    <h1>Zebra Printer Bluetooth PWA</h1>
+
+    <p>Click the "Connect to Printer" button to establish a Bluetooth connection and print "Hello, World!"</p>
+
+    <!-- Add a "Connect to Printer" button -->
+    <button id="connectButton">Connect to Printer</button>
+
+    <script>
+        // Check if the Bluetooth API is available
+        if ('bluetooth' in navigator) {
+            // Define the JavaScript code here
+
+            // Function to connect to the printer and print "Hello, World!"
+            async function connectAndPrint() {
+                try {
+                    // Define the UUIDs for the service and characteristics
+                    const serviceUUID = '38eb4a80-c570-11e3-9507-0002a5d5c51b';
+                    const toPrinterUUID = '38eb4a82-c570-11e3-9507-0002a5d5c51b';
+
+                    // Request Bluetooth device
+                    const device = await navigator.bluetooth.requestDevice({
+                        filters: [{ services: [serviceUUID] }],
+                    });
+
+                    // Connect to the GATT server on the device
+                    const server = await device.gatt.connect();
+
+                    // Get the service
+                    const service = await server.getPrimaryService(serviceUUID);
+
+                    // Get the "To Printer Data" characteristic
+                    const toPrinterCharacteristic = await service.getCharacteristic(toPrinterUUID);
+
+                    // Create a ZPL label to print "Hello, World!"
+                    const zplCode = `
+                        ^XA
+                        ^FO20,20^A0N,50,50^FDHello, World!^FS
+                        ^XZ
+                    `;
+
+                    // Convert the ZPL code to bytes
+                    const encoder = new TextEncoder('utf-8');
+                    const dataToSend = encoder.encode(zplCode);
+
+                    // Send the ZPL code to the printer
+                    await toPrinterCharacteristic.writeValue(dataToSend);
+
+                    console.log('Printed "Hello, World!" to Zebra printer');
+
+                    // Close the Bluetooth connection
+                    await server.disconnect();
+                } catch (error) {
+                    console.error('Bluetooth error:', error);
+                }
+            }
+
+            // Add an event listener to the "Connect to Printer" button
+            document.getElementById('connectButton').addEventListener('click', function () {
+                connectAndPrint(); // Connect and print when the button is clicked
+            });
+        } else {
+            // Bluetooth is not supported on this device
+            alert("Bluetooth is not supported on this device.");
+        }
+    </script>
+</body>
+</html>

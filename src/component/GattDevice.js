@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Card, Col, Row } from 'react-bootstrap';
 import ErrorHandler from './ErrorHandler';
 import PrintZpl from './PrintZpl';
@@ -7,6 +7,16 @@ const Device = ({ device }) => {
     const [gattServer, setGattServer] = useState(null);
     const [errorMessage, setErrorMessage] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+
+        if (gattServer){
+            setLoading(false);
+            console.log("Gatt server connected...")
+            console.log(gattServer);
+        }
+
+    }, [gattServer])
 
     const connectToDevice = () => {
         setLoading(true)
