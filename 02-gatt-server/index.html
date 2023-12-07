@@ -13,6 +13,10 @@
     <!-- Add a "Connect to Printer" button -->
     <button id="connectButton">Connect to Printer</button>
 
+    <!-- Display status and errors -->
+    <div id="status"></div>
+    <div id="error"></div>
+
     <script>
         // Check if the Bluetooth API is available
         if ('bluetooth' in navigator) {
@@ -21,13 +25,18 @@
             // Function to connect to the printer and print "Hello, World!"
             async function connectAndPrint() {
                 try {
+                    // Clear any previous status and error messages
+                    document.getElementById('status').textContent = 'Connecting...';
+                    document.getElementById('error').textContent = '';
+
                     // Define the UUIDs for the service and characteristics
                     const serviceUUID = '38eb4a80-c570-11e3-9507-0002a5d5c51b';
                     const toPrinterUUID = '38eb4a82-c570-11e3-9507-0002a5d5c51b';
 
-                    // Request Bluetooth device
+                    // Request Bluetooth device with optional service UUID
                     const device = await navigator.bluetooth.requestDevice({
-                        filters: [{ services: [serviceUUID] }],
+                        acceptAllDevices: true,
+                        optionalServices: [serviceUUID],
                     });
 
                     // Connect to the GATT server on the device
@@ -53,11 +62,14 @@
                     // Send the ZPL code to the printer
                     await toPrinterCharacteristic.writeValue(dataToSend);
 
-                    console.log('Printed "Hello, World!" to Zebra printer');
+                    // Display success message
+                    document.getElementById('status').textContent = 'Printed "Hello, World!" to Zebra printer';
 
                     // Close the Bluetooth connection
                     await server.disconnect();
                 } catch (error) {
+                    // Display error message
+                    document.getElementById('error').textContent = 'Bluetooth error: ' + error.message;
                     console.error('Bluetooth error:', error);
                 }
             }
