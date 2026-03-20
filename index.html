@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zebra Printer Bluetooth PWA</title>
+</head>
+<body>
+    <h1>Zebra Printer Bluetooth PWA</h1>
+
+    <!-- ZPL INPUT -->
+    <h3>Enter ZPL Code:</h3>
+    <textarea id="zplInput" rows="10" cols="60">
+^XA
+^FO20,20^A0N,50,50^FDHello, World!^FS
+^XZ
+    </textarea>
+
+    <br><br>
+
+    <!-- BUTTONS -->
+    <button id="connectButton">Connect</button>
+    <button id="printButton">Print ZPL</button>
+
+    <!-- STATUS -->
+    <div id="status"></div>
+    <div id="error" style="color:red;"></div>
+
+    <script>
+        let characteristic = null;
+        let server = null;
+
+        async function sendInChunks(characteristic, data) {
+            const chunkSize = 180;
+            const delay = 15;
+
+            for (let i = 0; i < data.length; i += chunkSize) {
+                const chunk = data.slice(i, i + chunkSize);
+                await characteristic.writeValueWithoutResponse(chunk);
+                await new Promise(r => setTimeout(r, delay));
+            }
+
+            await new Promise(r => setTimeout(r, 200));
+        }
+
+        async function connectPrinter() {
+            try {
+                document.getElementById('status').textContent = 'Connecting...';
+                document.getElementById('error').textContent = '';
+
+                const serviceUUID = '38eb4a80-c570-11e3-9507-0002a5d5c51b';
+                const toPrinterUUID = '38eb4a82-c570-11e3-9507-0002a5d5c51b';
+
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: [serviceUUID],
+                });
+
+                server = await device.gatt.connect();
+                const service = await server.getPrimaryService(serviceUUID);
+                characteristic = await service.getCharacteristic(toPrinterUUID);
+
+                document.getElementById('status').textContent = '✅ Connected to printer';
+
+            } catch (error) {
+                document.getElementById('error').textContent = error.message;
+            }
+        }
+
+        async function printZPL() {
+            try {
+                if (!characteristic) {
+                    throw new Error("Printer not connected");
+                }
+
+                let zpl = document.getElementById('zplInput').value;
+
+                // Clean ZPL (remove extra newlines/spaces)
+                zpl = zpl.replace(/\n/g, '').trim();
+
+                const encoder = new TextEncoder();
+                const data = encoder.encode(zpl);
+
+                document.getElementById('status').textContent = 'Printing...';
+
+                await sendInChunks(characteristic, data);
+
+                document.getElementById('status').textContent = '✅ Printed successfully!';
+
+            } catch (error) {
+                document.getElementById('error').textContent = error.message;
+            }
+        }
+
+        document.getElementById('connectButton').addEventListener('click', connectPrinter);
+        document.getElementById('printButton').addEventListener('click', printZPL);
+    </script>
+</body>
+</html>
